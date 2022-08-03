@@ -1,6 +1,6 @@
 # Folder structure
 
-`DriverSpaceApproximation.py` is the library including classes and functions
+`DriverSpaceApproximation.py` is the library including classes and functions for the experiments
 
 Run `PreprocessingAndSampling.py` to preprocess and sample vehicles
 
