@@ -14,13 +14,15 @@ __Step 4.__ Use `ResultEvaluation.ipynb` to save accepted driver space inference
 
 __Step 1.__ Save raw data in the folder "RawDatasets".
 
-__Step 2.__ Create code to align the format of the new dataset to 
+__Step 2.__ Create code to align the format of the new dataset to the format of the data to be saved in the folder "InputData".
 
+__Step 3.__ Design your application according to the code in `Exp_pNEUMA.py`.
+
+__Step 4.__ Accept and reject inference results according to the code in `ResultEvaluation.ipynb`.
+
+
+# Abstract
+Interaction between vehicles in the urban environment is a complex spatial and temporal phenomenon. Particularly in lane-free scenarios such as unsignalised intersections, shared spaces, and parking lots, modelling urban vehicle interaction is required to be two-dimensional. Current approaches to modelling two-dimensional vehicle interaction are predominantly based on the distance between vehicles. However, equally distant vehicles can interact differently when they are at different positions and drive towards different directions. As a result, distance-based approaches are ill-suited for modelling two-dimensional vehicle interaction. In this study, we argue that driver space describes two-dimensional spacing and we propose a method to infer probabilistic driver space from urban trajectory data. More specifically, our method postulates that drivers tend to keep different comfortable distances from other vehicles in different scenarios and directions, and hence maintain a scenario-dependent asymmetric driver space around their vehicles. Based on this notion, the method infers the probabilistic driver space of a vehicle by estimating the accumulative density of other vehicles surrounding the vehicle. To test the method, we apply it to a well-known large-scale urban trajectory dataset called pNEUMA. Through the experiments, this method produces stable and behaviorally intuitive  driver space representation. The experiment results show asymmetric driver spaces and generate two-dimensional fundamental diagrams, offering insights into urban traffic. Thereby, this study offers a contribution to the growing research field on two-dimensional modelling of urban vehicle interaction.
 
 # Citation
-The paper has been published on the peer-review journal named "Information Fusion". Please cite it as:
-
-Yiru Jiao, Yongli Li. (2021). An active opinion dynamics model: the gap between the voting result and group opinion. Information Fusion, 65, 128-146. doi: https://doi.org/10.1016/j.inffus.2020.08.009
- 
-# Abstract
-Originally developed to simulate the evolution of public opinion, opinion dynamics models have also been successfully applied to market prices and advertising. However, passive interactions initiated by locational or social relationships in these models are insufficient to characterize purposeful behaviors such as canvass or trade, where people are driven by their specific inner causes. Here we propose an active model in which people tend to communicate with someone who is more likely to be an ally, and game theoretically decide whether to interact. Simulations of the model highlight the macroscopic development of opinion evolution, showing the ubiquitous gap between people’s voting result and their collective opinion, and how it narrows with the stabilization of opinion evolution. Our results help explain why group opinion rarely reverse its stance and the significance of an inclusiveness that is neither too high nor too low. Additionally, we find and testify the probability distribution of group opinion change, which contributes to predict how much the collective opinion of a group will change after full discussion.
+The paper is under review.
