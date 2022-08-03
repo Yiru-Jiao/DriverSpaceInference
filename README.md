@@ -2,7 +2,7 @@
 
 ## In order to repeat the experiments:
 
-__Step 1.__ Download raw data from [pNEUMA]<https://open-traffic.epfl.ch/index.php/downloads/> and save them in the folder "RawDatasets".
+__Step 1.__ Download raw data from <https://open-traffic.epfl.ch/index.php/downloads/> and save them in the folder "RawDatasets".
 
 __Step 2.__ Run `PreprocessingAndSampling.py` to process the raw data, transform and correct coordinates, and sample pairs of vehicles.
 
