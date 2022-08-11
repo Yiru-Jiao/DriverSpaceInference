@@ -162,7 +162,7 @@ class preprocess:
 
     ## 2.3 Zero heading check
     def zeroheading(self, df):
-        if np.all(np.logical_and(df['E_heading']==0, df['N_heading']==0)):
+        if np.any(np.logical_and(df['E_heading']==0, df['N_heading']==0)):
             return True
         else:
             return False
