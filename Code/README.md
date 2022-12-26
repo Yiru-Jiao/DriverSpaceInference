@@ -6,8 +6,6 @@ Run `Preprocessing.py` and `Sampling` to preprocess and sample vehicles, respect
 
 Run `Exp_pNEUMA.py` to repeat the experiments in our article
 
-Use `ResultEvaluation.ipynb` to accept and reject inference results
-
 # Operation system
 
 We performed the experiments on the Linux system and the inference used 10 CPUs for parallelizing.
