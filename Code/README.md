@@ -1,8 +1,8 @@
 # Folder structure
 
-`DriverSpaceApproximation.py` is the library including classes and functions for the experiments
+`DriverSpaceInference.py` is the library including classes and functions for the experiments
 
-Run `PreprocessingAndSampling.py` to preprocess and sample vehicles
+Run `Preprocessing.py` and `Sampling` to preprocess and sample vehicles, respectively
 
 Run `Exp_pNEUMA.py` to repeat the experiments in our article
 
