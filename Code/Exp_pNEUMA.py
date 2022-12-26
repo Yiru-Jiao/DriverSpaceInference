@@ -1,277 +1,173 @@
 import os
 import sys
-import glob
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
-import DriverSpaceApproximation as ds
+import DriverSpaceInference as dsi
 
 
 parent_dir = os.path.abspath('..')
 width = 2 
-length = 5 # Width and length of the averaged ego vehicle in the dataset
+length = 4.5 # Width and length to calculate initial parameters
+
+def exp(speed, samples):
+    num_sample = int(len(samples)*0.9)
+    if num_sample==0 or len(samples[samples.x<0])/len(samples[samples.x>0])>100 or len(samples[samples.x<0])/len(samples[samples.x>0])<0.01:
+        return np.zeros(28)*np.nan
+    else:
+        # Infer driver space
+        randomstate = 0
+        reject = True
+        while reject and randomstate<=10:
+            sample = samples.loc[np.random.RandomState(randomstate).choice(samples.index.values,num_sample,replace=False)]
+            # sys.stdout.write('---- speed = ' + str(speed) + ', randomstate = ' + str(randomstate) + ' ----\n')
+            
+            try:
+                ry_plus = np.percentile(sample.y[(sample.y>=0)&(abs(sample.x)<width/2)], 0.1)
+                ry_minus = np.percentile(sample.y[(sample.y<0)&(abs(sample.x)<width/2)], 0.1)
+            except:
+                randomstate = 35
+                continue
+
+            try:
+                rx_plus = np.percentile(sample.x[(sample.x>0)&(sample.y<=max(length/2,ry_plus/2))&(sample.y>=-max(length/2,ry_minus/2))], 0.1)
+                rx_minus = np.percentile(-sample.x[(sample.x<0)&(sample.y<=max(length/2,ry_plus/2))&(sample.y>=-max(length/2,ry_minus/2))], 0.1)
+            except:
+                randomstate = 35
+                continue
+            
+            driver_space = dsi.drspace(sample, eps=1e-4, width=width, length=length, percentile=0.1)
+            corrcoef_xy = driver_space.corrcoef_xy
+            bounds, estimation, stderror_beta, pvalue_beta = driver_space.Inference(max_iter=30, workers=10)
+            bounds = np.round(bounds,1)
+            estimation = np.round(estimation,1)
+            driver_space = [] # release occupied memory
+
+            if np.all(np.isnan(bounds)):
+                pfailure = False
+                rxfailure = False
+                ryfailure = False
+            else:
+                if np.all(np.isnan(estimation)):
+                    pfailure = False
+                    rxfailure = False
+                    ryfailure = False
+                else:
+                    pfailure = np.any(pvalue_beta>0.05)
+                    rxfailure = (estimation[0]==bounds[0])|(estimation[1]==bounds[2])
+                    ryfailure = (estimation[2]==bounds[4])|(estimation[2]==bounds[5])|(estimation[3]==bounds[6])|(estimation[3]==bounds[7])
+                
+            reject = np.any([pfailure, rxfailure, ryfailure])|np.any(np.isnan(estimation))
+            randomstate += 1
+
+        if randomstate<35:
+            return np.concatenate(([reject, randomstate, len(sample), corrcoef_xy],
+                                    bounds,
+                                    estimation,
+                                    stderror_beta,
+                                    pvalue_beta))
+        else:
+            return np.zeros(28)*np.nan
 
 
 # Exp1: Driver space inference (corresponding to subsection 3.2 in our article)
-
-def experiment(i):
-    samples = surrounding[surrounding['vy_relative']>v_relative[i]-speed_interval/2]
-    samples = samples[samples['vy_relative']<=v_relative[i]+speed_interval/2]
-    
-    driver_space = ds.drspace(samples, width=width, length=length)
-    corrcoef_xy = driver_space.corrcoef_xy
-
-    ini_rx_plus = driver_space.r_x_plus
-    ini_rx_minus = driver_space.r_x_minus
-    ini_ry_plus = driver_space.r_y_plus
-    ini_ry_minus = driver_space.r_y_minus
-
-    lower_bounds, estimation, stderror_beta, pvalue_beta = driver_space.Inference(max_iter=50, workers=20)
-    
-    r_x_plus, r_x_minus, r_y_plus, r_y_minus, beta_x_plus, beta_x_minus, beta_y_plus, beta_y_minus = estimation
-    r_x = (1+np.sign(samples['relative_x']))/2*r_x_plus + (1-np.sign(samples['relative_x']))/2*r_x_minus
-    r_y = (1+np.sign(samples['relative_y']))/2*r_y_plus + (1-np.sign(samples['relative_y']))/2*r_y_minus
-    beta_x = (1+np.sign(samples['relative_x']))/2*beta_x_plus + (1-np.sign(samples['relative_x']))/2*beta_x_minus
-    beta_y = (1+np.sign(samples['relative_y']))/2*beta_y_plus + (1-np.sign(samples['relative_y']))/2*beta_y_minus
-
-    num_pr = np.zeros(10)
-    if np.all(np.isnan(estimation)):
-        num_pr[:] = np.nan
-    else:
-        samples['proximity_resistance'] = np.exp(-abs(samples['relative_x']/r_x)**(beta_x) - abs(samples['relative_y']/r_y)**(beta_y))
-        for j in range(10):
-            num_pr[j] = samples[np.logical_and(samples['proximity_resistance']>=j/10, samples['proximity_resistance']<(j+1)/10)].shape[0]
-
-    estimates = np.concatenate(([v_relative[i], corrcoef_xy, ini_rx_plus, ini_rx_minus, ini_ry_plus, ini_ry_minus],
-                                lower_bounds,
-                                estimation,
-                                stderror_beta,
-                                pvalue_beta,
-                                num_pr), axis=None)
-
-    return estimates
-
-for dx in ['d'+str(did) for did in range(1,11)]:
+for dx in ['d'+str(did+1) for did in range(10)]:
     sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/' + dx
 
-    all_files = glob.glob(sample_path + '/*.h5')
-    surrounding = []
-    for filename in all_files:
-        df = pd.read_hdf(filename, key='sample')
-        surrounding.append(df)
-    surrounding = pd.concat(surrounding, axis=0, ignore_index=True)
-    sys.stdout.write('---- Samples loaded successfully ----\n')
-
-    # Position correction
-    surrounding['relative_x'] = surrounding['relative_x'] / surrounding['width_j'] * width
-    surrounding['relative_y'] = surrounding['relative_y'] / surrounding['length_j'] * length
-
-    speed_interval = 0.2
-    v_relative = np.round(np.arange(0, 13 + speed_interval, speed_interval), 1)
-
-    surrounding = surrounding[surrounding.vy_relative <= 13+speed_interval/2]
-
-    result = np.zeros((len(v_relative), 34))
-    for i in range(len(v_relative)):
-        sys.stdout.write('---- relative speed = ' + str(v_relative[i]) + ', start estimation ----\n')
-        result[i] = experiment(i)
-        ## Save result
-        result_tosave = pd.DataFrame(result, columns=['vy_relative',
-                                                      'corrcoef_xy',
-                                                      'ini_rx_plus',
-                                                      'ini_rx_minus',
-                                                      'ini_ry_plus',
-                                                      'ini_ry_minus',
-                                                      'x_lower_bound',
-                                                      'y_lower_bound',
-                                                      'r_x_plus_hat',
-                                                      'r_x_minus_hat',
-                                                      'r_y_plus_hat',
-                                                      'r_y_minus_hat',
-                                                      'beta_x_plus_hat',
-                                                      'beta_x_minus_hat',
-                                                      'beta_y_plus_hat',
-                                                      'beta_y_minus_hat',
-                                                      'stderr_beta_x_plus',
-                                                      'stderr_beta_x_minus',
-                                                      'stderr_beta_y_plus',
-                                                      'stderr_beta_y_minus',
-                                                      'pval_beta_x_plus',
-                                                      'pval_beta_x_minus',
-                                                      'pval_beta_y_plus',
-                                                      'pval_beta_y_minus',
-                                                      'num_pr_1',
-                                                      'num_pr_2',
-                                                      'num_pr_3',
-                                                      'num_pr_4',
-                                                      'num_pr_5',
-                                                      'num_pr_6',
-                                                      'num_pr_7',
-                                                      'num_pr_8',
-                                                      'num_pr_9',
-                                                      'num_pr_10'])
-
-        result_tosave.to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Approximation/RelativeSpeed/exp_' + dx + '.csv')
-
-    sys.stdout.write('All results saved successfully\n')
-
-
-# Exp2: Bootstrapping (corresponding to subsection 3.3 in our article)
-
-sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/d6'
-
-all_files = glob.glob(sample_path + '/*.h5')
-surrounding = []
-for filename in all_files:
-    df = pd.read_hdf(filename, key='sample')
-    surrounding.append(df)
-surrounding = pd.concat(surrounding, axis=0, ignore_index=True)
-sys.stdout.write('---- Samples loaded successfully ----\n')
-
-# Position correction
-surrounding['relative_x'] = surrounding['relative_x'] / surrounding['width_j'] * width
-surrounding['relative_y'] = surrounding['relative_y'] / surrounding['length_j'] * length
-
-speed_interval = 0.2
-v_relative = np.round(np.arange(0, 14, 1), 1)
-
-def experiment(i):
-    samples = surrounding[surrounding['vy_relative']>v_relative[i]-speed_interval/2]
-    samples = samples[samples['vy_relative']<=v_relative[i]+speed_interval/2]
-    subsample_size = int(np.round(len(samples) * 0.8)) # 80% of the samples
-
-    estimates = np.zeros((20, 22))
-    iter_exp = 0
-    iter_count = 0
-    while iter_count < 20:
-        np.random.seed(iter_exp)
-        sub_samples = samples.loc[np.random.choice(samples.index, subsample_size)]
+    for cangle, abbr in zip([0,1], ['nonlat','withlat']):
+        surrounding = pd.read_hdf(sample_path + '/samples_toinfer_' + dx + '.h5', key='samples')
+        surrounding = surrounding[surrounding.cangle==cangle]
+        sys.stdout.write('---- ' + abbr + ' -- ' + dx + ' ----\n')
         
-        driver_space = ds.drspace(sub_samples, width=width, length=length)
-        corrcoef_xy = driver_space.corrcoef_xy
-
-        sys.stdout.write('---- relative velocity = ' + str(v_relative[i]) + ', iteration = ' + str(iter_exp) + ', iter_count = ' + str(iter_count) + ' ----\n')
-        lower_bounds, estimation, stderror_beta, pvalue_beta = driver_space.Inference(max_iter=50, workers=20)
-
-        pfailure = np.any(pvalue_beta>0.05)
-        rxfailure = np.logical_or(estimation[0]==lower_bounds[0], estimation[1]==lower_bounds[0])
-        ryfailure = np.logical_or(estimation[2]==lower_bounds[1], estimation[3]==lower_bounds[1])
+        roundvs = surrounding.round_v.unique()
+        savefile = np.zeros(roundvs.shape).astype(bool)
+        savefile[np.arange(10,len(roundvs),10)] = True
+        savefile[-1] = True
         
-        if ~np.any(np.array([pfailure, rxfailure, ryfailure])):
-            estimates[iter_count] = np.concatenate(([iter_exp, v_relative[i], subsample_size, corrcoef_xy, lower_bounds[0], lower_bounds[1]],
-                                                     estimation,
-                                                     stderror_beta,
-                                                     pvalue_beta))
-            iter_count += 1
-        
-        iter_exp += 1
+        results = pd.DataFrame(np.empty((len(roundvs),28)), columns=['reject','randomstate','num_sample','corrcoef_xy',
+                                                                     'x_plus_lb','x_plus_ub','x_minus_lb','x_minus_ub','y_plus_lb','y_plus_ub','y_minus_lb','y_minus_ub', 
+                                                                     'rx_plus_hat','rx_minus_hat','ry_plus_hat','ry_minus_hat','bx_plus_hat','bx_minus_hat','by_plus_hat','by_minus_hat',
+                                                                     'stderr_bx_plus','stderr_bx_minus','stderr_by_plus','stderr_by_minus',
+                                                                     'pval_bx_plus','pval_bx_minus','pval_by_plus','pval_by_minus'])
+        results['round_v'] = roundvs
+        results = results.set_index('round_v')
 
-    return estimates
+        for speed, savef in tqdm(zip(roundvs, savefile), total=len(roundvs)):
+            result = exp(speed, surrounding[surrounding.round_v==speed])
+            results.loc[speed] = result
+            if savef:
+                results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/' + abbr + '_' + dx + '.csv')
+            
+    sys.stdout.write('Results saved successfully\n')
 
-result = np.zeros((len(v_relative)*20, 22))
-for i in range(len(v_relative)):
-    result[i*20:(i+1)*20] = experiment(i)
 
-    ## Save result
-    result_tosave = pd.DataFrame(result, columns=['iter_exp',
-                                                  'vy_relative',
-                                                  'num_samples',
-                                                  'corrcoef_xy',
-                                                  'x_lower_bound',
-                                                  'y_lower_bound',
-                                                  'r_x_plus_hat',
-                                                  'r_x_minus_hat',
-                                                  'r_y_plus_hat',
-                                                  'r_y_minus_hat',
-                                                  'beta_x_plus_hat',
-                                                  'beta_x_minus_hat',
-                                                  'beta_y_plus_hat',
-                                                  'beta_y_minus_hat',
-                                                  'stderr_beta_x_plus',
-                                                  'stderr_beta_x_minus',
-                                                  'stderr_beta_y_plus',
-                                                  'stderr_beta_y_minus',
-                                                  'pval_beta_x_plus',
-                                                  'pval_beta_x_minus',
-                                                  'pval_beta_y_plus',
-                                                  'pval_beta_y_minus'])
+# Exp2: Bootstrapping (corresponding to subsection 3.4 in our article)
+dx = 'd10'
+sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/' + dx
 
-    result_tosave.to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Approximation/Bootstrapping_d6.csv')
-
-sys.stdout.write('All results saved successfully\n')
+for cangle, abbr in zip([0], ['nonlat']):
+    surrounding = pd.read_hdf(sample_path + '/samples_toinfer_' + dx + '.h5', key='samples')
+    surrounding = surrounding[surrounding.cangle==cangle]
+    sys.stdout.write('---- ' + abbr + ' -- ' + dx + ' ----\n')
+    
+    roundvs = np.array([3.6,5.6,6.4,7.5,8.3,10.6])
+    results = pd.DataFrame(np.empty((20*len(roundvs),28)), columns=['reject','randomstate','num_sample','corrcoef_xy',
+                                                                    'x_plus_lb','x_plus_ub','x_minus_lb','x_minus_ub','y_plus_lb','y_plus_ub','y_minus_lb','y_minus_ub', 
+                                                                    'rx_plus_hat','rx_minus_hat','ry_plus_hat','ry_minus_hat','bx_plus_hat','bx_minus_hat','by_plus_hat','by_minus_hat',
+                                                                    'stderr_bx_plus','stderr_bx_minus','stderr_by_plus','stderr_by_minus',
+                                                                    'pval_bx_plus','pval_bx_minus','pval_by_plus','pval_by_minus'])
+    results['round_v'] = np.repeat(roundvs,20)
+    results = results.set_index('round_v')
+    
+    randomstates = []
+    for speed in tqdm(roundvs):
+        iter_count = 0
+        randomstate = 0
+        result_speed = []
+        while iter_count<20:
+            samples = surrounding[surrounding.round_v==speed]
+            samples = samples.loc[np.random.RandomState(randomstate).choice(samples.index.values,int(0.9*len(samples)),replace=False)]
+            result = exp(speed, samples)
+            if result[0]==0:
+                result_speed.append(result)
+                randomstates.append(randomstate)
+                iter_count += 1
+            randomstate += 1
+        results.loc[speed] = np.array(result_speed)
+        results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Bootstrapping_' + abbr + '_' + dx + '.csv')
+    
+    results['RandState'] = randomstates
+    results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Bootstrapping_' + abbr + '_' + dx + '.csv')
+            
+sys.stdout.write('Results saved successfully\n')
 
 
 # Exp3: Asymmetric driver space (corresponding to subsection 4.1 in our article)
 
-for did in ['d6', 'd7']:
+for dx, cangle, abbr1 in zip(['d4', 'd9'], [1,0], ['withlat','nonlat']):
+    sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/' + dx
+    for direction, abbr2 in zip([1,-1],['front','back']):
+        surrounding = pd.read_hdf(sample_path + '/samples_toinfer_frontback_' + dx + '.h5', key='samples')
+        surrounding = surrounding[(surrounding.cangle==cangle)&(surrounding.direction==direction)]
+        sys.stdout.write('---- ' + abbr1 + '--' + abbr2 + ' -- ' + dx + ' ----\n')
 
-    sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/' + did
+        roundvs = surrounding.round_v.unique()
+        savefile = np.zeros(roundvs.shape).astype(bool)
+        savefile[np.arange(10,len(roundvs),10)] = True
+        savefile[-1] = True
 
-    for position in ['front', 'back']:
+        results = pd.DataFrame(np.empty((len(roundvs),28)), columns=['reject','randomstate','num_sample','corrcoef_xy',
+                                                                        'x_plus_lb','x_plus_ub','x_minus_lb','x_minus_ub','y_plus_lb','y_plus_ub','y_minus_lb','y_minus_ub', 
+                                                                        'rx_plus_hat','rx_minus_hat','ry_plus_hat','ry_minus_hat','bx_plus_hat','bx_minus_hat','by_plus_hat','by_minus_hat',
+                                                                        'stderr_bx_plus','stderr_bx_minus','stderr_by_plus','stderr_by_minus',
+                                                                        'pval_bx_plus','pval_bx_minus','pval_by_plus','pval_by_minus'])
+        results['round_v'] = roundvs
+        results = results.set_index('round_v')
 
-        all_files = glob.glob(sample_path + '/*.h5')
-        surrounding = []
-        for filename in all_files:
-            df = pd.read_hdf(filename, key='sample')
-            surrounding.append(df)
-        surrounding = pd.concat(surrounding, axis=0, ignore_index=True)
-        sys.stdout.write('---- Samples loaded successfully ----\n')
-
-        # Position correction
-        surrounding['relative_x'] = surrounding['relative_x'] / surrounding['width_j'] * width
-        surrounding['relative_y'] = surrounding['relative_y'] / surrounding['length_j'] * length
-
-        # Vehicles filtering
-        if position=='front':
-            surrounding = surrounding[(surrounding.gx_v_i*(surrounding.gx_O_j-surrounding.gx_O_i)+surrounding.gy_v_i*(surrounding.gy_O_j-surrounding.gy_O_i))/np.sqrt(surrounding.gx_v_i**2+surrounding.gy_v_i**2)/np.sqrt((surrounding.gx_O_j-surrounding.gx_O_i)**2+(surrounding.gy_O_j-surrounding.gy_O_i)**2)>0]
-        elif position=='back':
-            surrounding = surrounding[(surrounding.gx_v_i*(surrounding.gx_O_j-surrounding.gx_O_i)+surrounding.gy_v_i*(surrounding.gy_O_j-surrounding.gy_O_i))/np.sqrt(surrounding.gx_v_i**2+surrounding.gy_v_i**2)/np.sqrt((surrounding.gx_O_j-surrounding.gx_O_i)**2+(surrounding.gy_O_j-surrounding.gy_O_i)**2)<0]
-
-        speed_interval = 0.2
-        v_relative = np.round(np.arange(0, 13 + speed_interval, speed_interval), 1)
-
-        def experiment(i):
-            samples = surrounding[surrounding['vy_relative']>v_relative[i]-speed_interval/2]
-            samples = samples[samples['vy_relative']<=v_relative[i]+speed_interval/2]
+        for speed, savef in tqdm(zip(roundvs, savefile), total=len(roundvs)):
+            result = exp(speed, surrounding[surrounding.round_v==speed])
+            results.loc[speed] = result
+            if savef:
+                results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/' + abbr1 + '_' + abbr2 + '_' + dx + '.csv')
             
-            driver_space = ds.drspace(samples, width=width, length=length)
-            corrcoef_xy = driver_space.corrcoef_xy
-
-            lower_bounds, estimation, stderror_beta, pvalue_beta = driver_space.Inference(max_iter=50, workers=20)
-            
-            estimates = np.concatenate(([v_relative[i], corrcoef_xy, lower_bounds[0], lower_bounds[1]],
-                                        estimation,
-                                        stderror_beta,
-                                        pvalue_beta))
-
-            return estimates
-
-        result = np.zeros((len(v_relative), 20))
-        for i in range(len(v_relative)):
-            sys.stdout.write('---- relative speed = ' + str(v_relative[i]) + ', start estimation ----\n')
-            result[i] = experiment(i)
-
-            ## Save result
-            result_tosave = pd.DataFrame(result, columns=['vy_relative',
-                                                          'corrcoef_xy',
-                                                          'x_lower_bound',
-                                                          'y_lower_bound',
-                                                          'r_x_plus_hat',
-                                                          'r_x_minus_hat',
-                                                          'r_y_plus_hat',
-                                                          'r_y_minus_hat',
-                                                          'beta_x_plus_hat',
-                                                          'beta_x_minus_hat',
-                                                          'beta_y_plus_hat',
-                                                          'beta_y_minus_hat',
-                                                          'stderr_beta_x_plus',
-                                                          'stderr_beta_x_minus',
-                                                          'stderr_beta_y_plus',
-                                                          'stderr_beta_y_minus',
-                                                          'pval_beta_x_plus',
-                                                          'pval_beta_x_minus',
-                                                          'pval_beta_y_plus',
-                                                          'pval_beta_y_minus'])
-
-            result_tosave.to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Approximation/' + position + '_' + did + '.csv')
-
-    sys.stdout.write('All results saved successfully\n')
+sys.stdout.write('Results saved successfully\n')
