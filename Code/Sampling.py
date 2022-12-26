@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore')
 def angle(vec1x, vec1y, vec2x, vec2y):
     sin = vec1x * vec2y - vec2x * vec1y  
     cos = vec1x * vec2x + vec1y * vec2y
-    return np.arctan2(sin, cos) * (180 / np.pi)
+    return -np.arctan2(sin, cos) * (180 / np.pi)
 
 parent_dir = os.path.abspath('..')
 
