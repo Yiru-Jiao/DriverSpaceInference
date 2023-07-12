@@ -1,5 +1,8 @@
 # Code for "Inferring vehicle spacing in urban traffic from trajectory data"
 
+## Package requirements
+`tqdm`, `numpy`, `pandas`, `scipy`, `pyproj=3.2.0`, `joblib`, `matplotlib`, `shapely`, `scikit-learn`
+
 ## In order to repeat the experiments:
 
 __Step 1.__ Download raw data from <https://open-traffic.epfl.ch/index.php/downloads/> and save them in the folder "RawDatasets".
@@ -13,6 +16,8 @@ __Step 4.__ Run `Sampling_exp1-2.py`, `Sampling_exp3.ipynb`, and `Sampling_exp4.
 __Step 4.__ Run `Experiments.py` to repeat our experiments in the article.
 
 __*__ `DriverSpaceInference.py` is the library including classes and functions for the experiments
+
+__*__ We run the experiments in Linux with a cluster of CPUs. To be run on other OSs may need adjustments regarding the number of cores for parallel processing.
 
 ## In order to apply the method to another dataset:
 
