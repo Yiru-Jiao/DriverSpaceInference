@@ -1,3 +1,8 @@
+'''
+Inference algorithm
+
+'''
+
 import numpy as np
 from scipy.misc import derivative
 from scipy import optimize
@@ -181,39 +186,24 @@ class drspace:
 
         try:
             # Lower seraching bounds
-            if self.samples.cangle.iloc[0]==0:
-                percentage = (0.15 + 0.0003*self.v.mean()**2.7)/150
-            elif self.samples.cangle.iloc[0]==1:
-                percentage = 0.0005 + (0.002*self.v.mean())**2
+            percentage = 0.0005 + (0.002*self.v.mean())**2
             candidates = self.samples.y[(self.samples.y>=0)&(abs(self.samples.x)<self.width/2)]
-            y_plus_llimit = max(self.length/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.8)
+            y_plus_llimit = max(self.length/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.7)-0.5
             candidates = (-self.samples.y[(self.samples.y<0)&(abs(self.samples.x)<self.width/2)])
-            y_minus_llimit = max(self.length/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.8)
-            # candidates = self.samples.x[(self.samples.x>0)&(self.samples.y<y_plus_llimit)&(self.samples.y>y_minus_llimit)]
-            # x_plus_llimit = max(self.width/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.8)
-            # candidates = (-self.samples.x[(self.samples.x<0)&(self.samples.y<y_plus_llimit)&(self.samples.y>y_minus_llimit)])
-            # x_minus_llimit = max(self.width/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.8)
-            x_plus_llimit = 1.5
-            x_minus_llimit = 1.5
+            y_minus_llimit = max(self.length/2, candidates.nsmallest(max(10, int(len(candidates)*percentage))).nlargest(10).mean()*0.7)-0.5
+            x_plus_llimit = 1.2
+            x_minus_llimit = 1.2
 
             # Upper seraching bounds
             conditionx = (self.samples.x<x_plus_llimit)&(self.samples.x>-x_minus_llimit)
-            conditiony = (self.samples.y<y_plus_llimit)&(self.samples.y>-y_minus_llimit)
-
-            percentage = 0.15 + 0.0003*self.v.mean()**2.7
+            percentage = 0.2 + 0.001*self.v.mean()**2.8
             candidates = self.samples.y[conditionx&(self.samples.y>0)]
             y_plus_ulimit = candidates.nsmallest(int(len(candidates)*percentage)).nlargest(10).mean()
             candidates = -self.samples.y[conditionx&(self.samples.y<0)]
             y_minus_ulimit = candidates.nsmallest(int(len(candidates)*percentage)).nlargest(10).mean()
-            # candidates = self.samples.x[conditiony&(self.samples.x>0)]
-            # x_plus_ulimit = candidates.nsmallest(int(len(candidates)*0.25)).nlargest(10).mean()
-            # candidates = -self.samples.x[conditiony&(self.samples.x<0)]
-            # x_minus_ulimit = candidates.nsmallest(int(len(candidates)*0.25)).nlargest(10).mean()
-            x_plus_ulimit = 5.5
-            x_minus_ulimit = 5.5
+            x_plus_ulimit = 7.
+            x_minus_ulimit = 7.
             
-            y_plus_llimit -= 0.5
-            y_minus_llimit -= 0.5
             x_plus_llimit, x_minus_llimit, y_plus_llimit, y_minus_llimit = np.floor(np.array([x_plus_llimit, x_minus_llimit, y_plus_llimit, y_minus_llimit])*10)/10
             x_plus_ulimit, x_minus_ulimit, y_plus_ulimit, y_minus_ulimit = np.ceil(np.array([x_plus_ulimit, x_minus_ulimit, y_plus_ulimit, y_minus_ulimit])*10)/10
             limits = np.array([x_plus_llimit, x_plus_ulimit, x_minus_llimit, x_minus_ulimit, y_plus_llimit, y_plus_ulimit, y_minus_llimit, y_minus_ulimit])
