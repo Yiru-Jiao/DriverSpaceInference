@@ -1,4 +1,4 @@
-# Code for "Probabilistic representation for driver space and its inference from urban trajectory data"
+# Code for "Inferring vehicle spacing in urban traffic from trajectory data"
 
 ## In order to repeat the experiments:
 
