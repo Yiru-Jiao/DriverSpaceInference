@@ -2,16 +2,18 @@
 
 `DriverSpaceInference.py` is the library including classes and functions for the experiments
 
-Run `Preprocessing.py` and `Sampling` to preprocess and sample vehicles, respectively
+Run `Preprocessing.py` first to preprocess the rawdata
 
-Run `Exp_pNEUMA.py` to repeat the experiments in our article
+Run `Sampling_exp1-2.py`, `Sampling_exp3.ipynb`, and `Sampling_exp4.py` to sample vehicle pairs for different experiments
+
+Run `Experiments.py` to repeat the experiments in our article
 
 # Operation system
 
-We performed the experiments on the Linux system and the inference used 10 CPUs for parallelizing.
+We performed the experiments on the Linux system and the inference used 15 CPUs for parallelizing.
 
 # Requirements
-Library requirements: `numpy`, `pandas`, `scipy`, `pyproj (3.2.0)`
+Library requirements: `numpy`, `pandas`, `scipy`, `tqdm`, `joblib`, `pyproj (3.2.0)`
 
-Note: Input data is saved as `.h5` file in our experiments. This requires the python package named `tables`.
+Note: Input data is saved as `.h5` file in our experiments. This requires the python package named `tables` or `pytables`.
 
