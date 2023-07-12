@@ -1,3 +1,11 @@
+'''
+Preprocessing of the pNEUMA dataset
+(Section 3.1 Preprocessing)
+
+'''
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
+
 import os
 import csv
 import glob
@@ -75,11 +83,11 @@ def pNEUMA(open_path, data_title):
     
     #//Geographical coordinates
     utm_crs_list = query_utm_crs_info(datum_name='WGS84',
-                                        area_of_interest=AreaOfInterest(
-                                        west_lon_degree=np.floor(data['lon'].min()), 
-                                        south_lat_degree=np.floor(data['lat'].min()), 
-                                        east_lon_degree=np.ceil(data['lon'].max()), 
-                                        north_lat_degree=np.ceil(data['lat'].max())),)
+                                      area_of_interest=AreaOfInterest(
+                                      west_lon_degree=np.floor(data['lon'].min()), 
+                                      south_lat_degree=np.floor(data['lat'].min()), 
+                                      east_lon_degree=np.ceil(data['lon'].max()), 
+                                      north_lat_degree=np.ceil(data['lat'].max())),)
     utm_crs = CRS.from_epsg(utm_crs_list[0].code)
     crs=CRS.from_epsg(4326)
     geo_coordinates = Transformer.from_crs(crs.geodetic_crs, utm_crs)
@@ -136,7 +144,7 @@ def KFV(track_id):
             x[0] = x[0] + dt[filterstep]*x[2]*np.cos(x[3])
             x[1] = x[1] + dt[filterstep]*x[2]*np.sin(x[3])
             x[2] = x[2]
-            x[3] = x[3]#(x[3]+ np.pi) % (2.0*np.pi) - np.pi
+            x[3] = (x[3]+ np.pi) % (2.0*np.pi) - np.pi
 
             # Calculate the Jacobian of the Dynamic Matrix A
             # see "Calculate the Jacobian of the Dynamic Matrix with respect to the state vector"
@@ -196,7 +204,7 @@ def KFV(track_id):
 
 ## 1.3 Zero heading check
 def zeroheading(df):
-    if np.any(np.logical_and(df['vx_kf']==0, df['vy_kf']==0)):
+    if np.all(np.logical_and(abs(df['vx_kf'].iloc[5:])<=0.5, abs(df['vy_kf'].iloc[5:])<=0.5)):
         return True
     else:
         return False
@@ -209,8 +217,10 @@ def cleaning(data):
     remove_list = remove_list.index[remove_list]
     data = data.set_index(['track_id','frame_id'])
     data = data.drop(remove_list, level=0)
+    print('There are ' + str(len(remove_list)) + ' parking vehicles')
     
     # ##//remove vehicles overlapping(<0.5m) another vehicle's trajectory, which is caused by computer vision inaccuracy
+    # ##//with these code commented, overlapping vehicles will be removed during sampling
     # data_round = data.copy()
     # data_round['x']=np.round(data['x']*2,0)/2
     # data_round['y']=np.round(data['y']*2,0)/2
@@ -219,10 +229,9 @@ def cleaning(data):
     # remove_list = duplicates.index.get_level_values(0).drop_duplicates()
     # data = data.drop(remove_list, level=0)
     
-    return data
+    return data, remove_list
 
-## 1.5 Transform
-parent_dir = os.path.abspath('..')
+# 1.5 Transform
 for dx in ['d'+str(did+1) for did in range(10)]:
     data_files = sorted(glob.glob(parent_dir + '/RawDatasets/pNEUMA/' + dx + '/*.csv'))
     open_path = parent_dir+'/RawDatasets/pNEUMA/'+dx
@@ -233,7 +242,7 @@ for dx in ['d'+str(did+1) for did in range(10)]:
     else:
         data_titles = [data_file[-26:-4] for data_file in data_files]
 
-    for data_title in data_titles:        
+    for data_title in data_titles:
         print('---- Preprocessing ' + data_title + ' ----')
 
         data_overview, data = pNEUMA(open_path, data_title)
@@ -241,14 +250,16 @@ for dx in ['d'+str(did+1) for did in range(10)]:
         track_ids = track_ids[track_ids>=25] # remove vehicles appearing less than 1 second
         data = data.loc[track_ids.index]
         track_ids = track_ids.index.values
-        data = pd.concat(Parallel(n_jobs=15)(delayed(KFV)(id) for id in tqdm(track_ids)))
+        data = pd.concat(Parallel(n_jobs=25)(delayed(KFV)(id) for id in tqdm(track_ids)))
         data['vx_kf'] = data.speed_kf*np.cos(data.psi_kf)
         data['vy_kf'] = data.speed_kf*np.sin(data.psi_kf)
-        data = data
 
-        data = cleaning(data)
+        data, nevermove = cleaning(data)
 
+        if len(nevermove)>0:
+            pd.DataFrame(nevermove).to_csv(save_path + '/nevermove_' + data_title + '.csv')
+        
         data[['length','width']] = data_overview.reindex(index=data.index.get_level_values(0))[['length','width']].values
         data['agent_type'] = data_overview.reindex(index=data.index.get_level_values(0))['type'].values
-        data = data[(data.agent_type!='Motorcycle')&(data.agent_type!='Undefined')]
-        data.to_hdf(save_path + '/data_' + data_title + '.h5', key='data')
+        
+        data.reset_index().to_hdf(save_path + '/data_' + data_title + '.h5', key='data')
