@@ -1,5 +1,8 @@
 # Code for "Inferring vehicle spacing in urban traffic from trajectory data"
 
+# Abstract
+This study presents a new method to infer the average two-dimensional (2D) spacing between interacting vehicles in urban traffic from trajectory data. In this context, 2D spacing reflects the amount of road space consumed by pairs of interacting vehicles, and is related to 2D density at the macroscopic level. Due to complex interaction and conflicts in urban traffic, the inherent assumptions in traditional traffic flow models, such as unidirectional flow and homogeneity, are often violated. Such violation challenges direct measurement of urban vehicle spacing. The proposed method addresses this challenge by focusing on the relative movement between interacting vehicles and aggregating the accumulated presence of vehicles in similar scenarios. We apply the method to a large-scale urban trajectory dataset called pNEUMA, and validate the consistency of the method through bootstrapping. By applying the method we obtain a new empirical relation between the average 2D spacing and the _relative_ speeds between interacting vehicles. There are similarities between this empirical relation with the classical Fundamental Diagram of traffic flow in terms of shape and interpretation, and so we term it the "interaction Fundamental Diagram" (iFD). However, there are also key differences. The iFD does not represent steady-state (homogeneous and stationary) longitudinal behaviour; it describes the average amount of road space needed for vehicle interactions at different relative speeds. We believe these iFD relations contribute to understanding vehicle interaction in urban traffic, and can offer new insights for designing safer and more efficient urban intersections.
+
 ## Package requirements
 `tqdm`, `numpy`, `pandas`, `scipy`, `pyproj=3.2.0`, `joblib`, `matplotlib`, `shapely`, `scikit-learn`
 
@@ -26,10 +29,6 @@ __Step 1.__ Save raw data in the folder "RawDatasets".
 __Step 2.__ Create code to align the format of the new dataset to the format of the data to be saved in the folder "InputData".
 
 __Step 3.__ Design your application according to the code in `Experiments.py`.
-
-
-# Abstract
-This study presents a new method to infer the average two-dimensional (2D) spacing between interacting vehicles in urban traffic from trajectory data. In this context, 2D spacing reflects the amount of road space consumed by pairs of interacting vehicles, and is related to 2D density at the macroscopic level. Due to complex interaction and conflicts in urban traffic, the inherent assumptions in traditional traffic flow models, such as unidirectional flow and homogeneity, are often violated. Such violation challenges direct measurement of urban vehicle spacing. The proposed method addresses this challenge by focusing on the relative movement between interacting vehicles and aggregating the accumulated presence of vehicles in similar scenarios. We apply the method to a large-scale urban trajectory dataset called pNEUMA, and validate the consistency of the method through bootstrapping. By applying the method we obtain a new empirical relation between the average 2D spacing and the _relative_ speeds between interacting vehicles. There are similarities between this empirical relation with the classical Fundamental Diagram of traffic flow in terms of shape and interpretation, and so we term it the "interaction Fundamental Diagram" (iFD). However, there are also key differences. The iFD does not represent steady-state (homogeneous and stationary) longitudinal behaviour; it describes the average amount of road space needed for vehicle interactions at different relative speeds. We believe these iFD relations contribute to understanding vehicle interaction in urban traffic, and can offer new insights for designing safer and more efficient urban intersections.
 
 # Citation
 ````latex
