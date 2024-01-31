@@ -16,7 +16,7 @@ __Step 3.__ Use `IntersectionDetection.py` and `IntersectionData.ipynb` in the f
 
 __Step 4.__ Run `Sampling_exp1-2.py`, `Sampling_exp3.ipynb`, and `Sampling_exp4.py` in the folder `Code` to transform coordinates, and sample vehicle pairs for different experiments.
 
-__Step 4.__ Run `Experiments.py` to repeat our experiments in the article.
+__Step 5.__ Run `Experiments.py` to repeat our experiments in the article.
 
 __*__ `DriverSpaceInference.py` is the library including classes and functions for the experiments
 
