@@ -13,7 +13,9 @@ This study is published in the journal "Transportation Research Part C: Emerging
 `tqdm`, `numpy`, `pandas`, `scipy`, `pyproj=3.2.0`, `joblib`, `matplotlib`, `shapely`, `scikit-learn`
 
 ### Data 
-Download raw data from <https://open-traffic.epfl.ch/index.php/downloads/> and save them in the folder "RawDatasets".
+Raw data can be downloaded from <https://open-traffic.epfl.ch/index.php/downloads/> and saved in the folder `./RawDatasets/`.
+
+Resulting data, i.e., a zipped file of the `./OutputData/` folder, can be downloaded from <https://doi.org/10.4121/8cadc255-5fd8-46ab-893a-64b76ca7b7f9>.
 
 ### Step-by-step instructions
 
