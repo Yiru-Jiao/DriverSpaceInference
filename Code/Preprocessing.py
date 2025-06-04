@@ -3,8 +3,6 @@ Preprocessing of the pNEUMA dataset
 (Section 3.1 Preprocessing)
 
 '''
-parent_dir = os.path.abspath('..') # Set your parent directory here. 
-                                   # Without change the current setting is the parent directory of this file.
 
 import os
 import csv
@@ -18,6 +16,9 @@ from pyproj.database import query_utm_crs_info
 import warnings
 warnings.filterwarnings('ignore')
 from joblib import Parallel, delayed
+
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
 
 ## 1.1 pNEUMA data extraction
 def pNEUMA(open_path, data_title):

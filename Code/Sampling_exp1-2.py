@@ -3,8 +3,6 @@ Sampling for experiment 1: driver space at the unsignalized intersections in pNE
 (Section 4.1 and 4.2)
 
 '''
-parent_dir = os.path.abspath('..') # Set your parent directory here. 
-                                   # Without change the current setting is the parent directory of this file.
 
 import os
 import glob
@@ -15,17 +13,20 @@ from itertools import combinations
 import warnings
 warnings.filterwarnings('ignore')
 
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
+
 def angle(vec1x, vec1y, vec2x, vec2y):
     sin = vec1x * vec2y - vec2x * vec1y  
     cos = vec1x * vec2x + vec1y * vec2y
     return -np.arctan2(sin, cos) * (180 / np.pi)
 
 
-target_intersections = pd.read_csv(parent_dir + '/OutputData/DriverSpace/pNEUMA/Intersection/target_intersections.csv')
+target_intersections = pd.read_csv(parent_dir + '/OutputData/DriverSpace/Intersection/target_intersections.csv')
 target_intersections = target_intersections[target_intersections['signalized']<0.5]
 
 data_files = {dx:sorted(glob.glob(parent_dir + '/InputData/pNEUMA/' + dx + '/data_*.h5')) for dx in ['d'+str(did+1) for did in range(10)]}
-save_path = parent_dir + '/OutputData/DriverSpace/pNEUMA/SurroundingSampling/Intersection'
+save_path = parent_dir + '/OutputData/DriverSpace/SurroundingSampling/Intersection'
 
 
 # Select data in the unsignalized intersections

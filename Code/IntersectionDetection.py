@@ -2,9 +2,6 @@
 Part I of intersection detection, the other part is in `IntersectionData.ipynb`
 
 '''
-parent_dir = os.path.abspath('..') # Set your parent directory here. 
-                                   # Without change the current setting is the parent directory of this file.
-
 
 import os
 import glob
@@ -14,7 +11,9 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
 
-save_path = parent_dir + '/OutputData/DriverSpace/pNEUMA/Intersection/trajectories/'
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
+save_path = parent_dir + '/OutputData/DriverSpace/Intersection/trajectories/'
 
 def read_data(dx):
 

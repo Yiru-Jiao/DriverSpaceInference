@@ -3,8 +3,6 @@ Sampling for experiment 4: impact of absolute speed
 (Section 5.2)
 
 '''
-parent_dir = os.path.abspath('..') # Set your parent directory here. 
-                                   # Without change the current setting is the parent directory of this file.
 
 import os
 import glob
@@ -14,6 +12,10 @@ import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
+
+
 def angle(vec1x, vec1y, vec2x, vec2y):
     sin = vec1x * vec2y - vec2x * vec1y  
     cos = vec1x * vec2x + vec1y * vec2y
@@ -22,7 +24,7 @@ def angle(vec1x, vec1y, vec2x, vec2y):
 
 # Merge samples
 print('---- Merging ----')
-save_path = parent_dir + '/OutputData/DriverSpace/pNEUMA/SurroundingSampling/Intersection'
+save_path = parent_dir + '/OutputData/DriverSpace/SurroundingSampling/Intersection'
 sample_files = sorted(glob.glob(save_path + '/sample_*.h5'))
 samples = []
 for sample_file in sample_files:

@@ -6,8 +6,6 @@ Exp3: Section 5.1 Impact of intersection layout
 Exp4: Section 5.2 Impact of absolute speed
 
 '''
-parent_dir = os.path.abspath('..') # Set your parent directory here. 
-                                   # Without change the current setting is the parent directory of this file.
 
 import os
 import sys
@@ -15,6 +13,9 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import DriverSpaceInference as dsi
+
+parent_dir = os.path.abspath('..') # Set your parent directory here. 
+                                   # Without change the current setting is the parent directory of this file.
 
 
 width = 2 
@@ -104,17 +105,17 @@ def run_exp(surrounding, filename):
 
 
 # Exp1: 
-sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/Intersection/'
+sample_path = parent_dir+'/OutputData/DriverSpace/SurroundingSampling/Intersection/'
 
 for cangle, abbr in zip([0,1], ['nonlat','withlat']):
     surrounding = pd.read_hdf(sample_path + 'unsignalized_samples_toinfer.h5', key='samples')
     surrounding = surrounding[surrounding.cangle==cangle]
     sys.stdout.write('---- Exp1 ' + abbr + ' ----\n')
-    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Intersection_' + abbr + '.csv')
+    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/Inference/Intersection_' + abbr + '.csv')
 
 
 # Exp2: 
-sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/Intersection/'
+sample_path = parent_dir+'/OutputData/DriverSpace/SurroundingSampling/Intersection/'
 
 surrounding = pd.read_hdf(sample_path + 'unsignalized_samples_toinfer.h5', key='samples')
 for cangle, abbr in zip([0,1], ['nonlat','withlat']):
@@ -150,33 +151,33 @@ for cangle, abbr in zip([0,1], ['nonlat','withlat']):
                 iter_count += 1
             randomstate += 1
         results.loc[speed] = np.array(result_speed)
-        results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Bootstrapping_'+abbr+'.csv')
+        results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/Inference/Bootstrapping_'+abbr+'.csv')
 
     results['RandState'] = np.array(randomstates)
-    results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Bootstrapping_'+abbr+'.csv')
+    results.reset_index().to_csv(parent_dir+'/OutputData/DriverSpace/Inference/Bootstrapping_'+abbr+'.csv')
             
     sys.stdout.write('Results saved successfully\n')
 
 
 # Exp3: 
-sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/IntersectionGL/'
+sample_path = parent_dir+'/OutputData/DriverSpace/SurroundingSampling/IntersectionGL/'
 
 for cangle, abbr in zip([0,1], ['nonlat','withlat']):
     surrounding = pd.read_hdf(sample_path + 'samples_toinfer_GL.h5', key='samples')
     surrounding = surrounding[surrounding.cangle==cangle]
     sys.stdout.write('---- Exp3 ' + abbr + ' ----\n')
-    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/IntersectionGL_' + abbr + '.csv')
+    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/Inference/IntersectionGL_' + abbr + '.csv')
 
 
 # Exp4: 
-sample_path = parent_dir+'/OutputData/DriverSpace/pNEUMA/SurroundingSampling/Intersection/'
+sample_path = parent_dir+'/OutputData/DriverSpace/SurroundingSampling/Intersection/'
 
 for suffix in ['rv0','rv2','rv4','rv6']:
     surrounding = pd.read_hdf(sample_path + 'samples_toinfer_' + suffix + '_nonlat.h5', key='samples')
     sys.stdout.write('---- Exp4 nonlat ' + suffix + ' ----\n')
-    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Intersection_nonlat_' + suffix + '.csv')
+    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/Inference/Intersection_nonlat_' + suffix + '.csv')
 
 for suffix in ['rv0','rv2','rv4','rv6']:
     surrounding = pd.read_hdf(sample_path + 'samples_toinfer_' + suffix + '_withlat.h5', key='samples')
     sys.stdout.write('---- Exp4 withlat ' + suffix + ' ----\n')
-    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/pNEUMA/Inference/Intersection_withlat_' + suffix + '.csv')
+    run_exp(surrounding, parent_dir+'/OutputData/DriverSpace/Inference/Intersection_withlat_' + suffix + '.csv')
