@@ -1,8 +1,8 @@
-# Resulting dataset readme
+# Resulting dataset README
 
 This dataset deposited at <https://doi.org/10.4121/8cadc255-5fd8-46ab-893a-64b76ca7b7f9> contains the processed outputs generated from raw vehicle trajectory data (pNEUMA) after completing preprocessing, intersection detection, and sampling. It is used to perform driver space inference experiments as described in the associated publication.
 
-## Data Organization
+## Data Organisation
 
 `OutputData.zip` has a structure as follows:
 - `OutputData/DriverSpace/`
@@ -16,7 +16,7 @@ This dataset deposited at <https://doi.org/10.4121/8cadc255-5fd8-46ab-893a-64b76
 - **x**: Global x-coordinate (meters) after coordinate transformation.
 - **y**: Global y-coordinate (meters) after coordinate transformation.
 - **v**: Vehicle speed in m/s.
-- **round_v**: Discretized, rounded speed value used for grouping samples.
+- **round_v**: Discretised, rounded speed value used for grouping samples.
 - **cangle**: Lateral interaction indicator; typically 0 (non-lateral) or 1 (with lateral interaction).
 - **track_id**: Unique identifier for each vehicle trajectory.
 - **frame_id**: Frame index marking the time sequence for each record.
@@ -32,5 +32,5 @@ This dataset deposited at <https://doi.org/10.4121/8cadc255-5fd8-46ab-893a-64b76
 ## Usage Notes
 
 - Data files are stored in standard formats (HDF5 or CSV) and can be loaded using Python packages such as `pandas` (e.g., `pd.read_hdf` or `pd.read_csv`).
-- The dataset is organized to support analysis of vehicle spacing and interaction dynamics at intersections under different experimental settings.
+- The dataset is organised to support analysis of vehicle spacing and interaction dynamics at intersections under different experimental settings.
 - For replication details, experiment code is open-sourced at <https://github.com/Yiru-Jiao/DriverSpaceInference>.
