@@ -7,6 +7,9 @@ This study is published in the journal "Transportation Research Part C: Emerging
 - The empirical relations are termed as interaction Fundamental Diagrams (iFDs).
 - iFDs describe the variation in required space for vehicle interactions.
 
+## In order to reuse the coordinate transformation into a relative movement system
+Please refer to [`coortrans.py`](https://github.com/Yiru-Jiao/GSSM/blob/main/src_data_preparation/represent_utils/coortrans.py) in the [GSSM repository](https://github.com/Yiru-Jiao/GSSM) for a ready-to-use class.
+
 ## In order to repeat the experiments:
 
 ### Dependencies
